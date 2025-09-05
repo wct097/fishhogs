@@ -417,6 +417,7 @@
                 <div id="weightNote" style="color: #666; font-size: 12px; margin-top: -10px; margin-bottom: 10px; display: none;">
                     Auto-calculated for halibut based on length
                 </div>
+                <input type="number" id="catchDepth" placeholder="Depth (feet) - Optional" min="0" max="2000">
                 <input type="text" id="catchNotes" placeholder="Notes - Optional">
                 
                 <button onclick="app.saveCatch()">Save Catch</button>
@@ -812,6 +813,7 @@
                 // Clear form when showing
                 document.getElementById('catchLength').value = '';
                 document.getElementById('catchWeight').value = '';
+                document.getElementById('catchDepth').value = '';
                 document.getElementById('catchNotes').value = '';
                 document.getElementById('weightNote').style.display = 'none';
                 document.getElementById('catchWeight').placeholder = 'Weight (lbs) - Optional';
@@ -924,6 +926,7 @@
                     species: this.selectedSpecies,
                     length: document.getElementById('catchLength').value,
                     weight: document.getElementById('catchWeight').value,
+                    depth: document.getElementById('catchDepth').value,
                     notes: document.getElementById('catchNotes').value,
                     timestamp: new Date().toISOString(),
                     lat: 37.7749 + (Math.random() - 0.5) * 0.01,
@@ -938,6 +941,7 @@
                 // Clear form
                 document.getElementById('catchLength').value = '';
                 document.getElementById('catchWeight').value = '';
+                document.getElementById('catchDepth').value = '';
                 document.getElementById('catchNotes').value = '';
                 this.selectedSpecies = null;
                 
@@ -966,6 +970,7 @@
                                 <strong>${c.species}</strong>
                                 ${c.length ? ` - ${c.length}${lengthUnit}` : ''}
                                 ${c.weight ? ` - ${c.weight}${weightUnit}` : ''}
+                                ${c.depth ? ` - ${c.depth}ft deep` : ''}
                                 ${c.notes ? `<br><small>${c.notes}</small>` : ''}
                             </div>
                         `).join('');
@@ -1090,7 +1095,7 @@ Started: ${new Date(session.started_at).toLocaleString()}
 Duration: ${this.calculateDuration(session.started_at, session.ended_at)}
 GPS Points: ${session.gps_points.length}
 Catches: ${session.catches.length}
-${session.catches.map(c => `\n- ${c.species} ${c.length ? c.length + 'cm' : ''}`).join('')}`);
+${session.catches.map(c => `\n- ${c.species} ${c.length ? c.length + 'in' : ''} ${c.weight ? c.weight + 'lbs' : ''} ${c.depth ? '@' + c.depth + 'ft' : ''}`).join('')}`);
                 }
             },
             
