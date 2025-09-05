@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Species Region Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .region { margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 5px; }
+        .species-count { font-weight: bold; color: #2196F3; }
+    </style>
+</head>
+<body>
+    <h2>Species by Region Summary</h2>
+    <script>
+        const speciesDatabase = {
+            'pacific-nw-salt': [
+                'Halibut', 'Lingcod', 'Rockfish', 'Chinook Salmon', 'Coho Salmon', 
+                'Pink Salmon', 'Chum Salmon', 'Sockeye Salmon', 'Dungeness Crab',
+                'Spot Shrimp', 'Black Cod', 'Cabezon', 'Greenling', 'Flounder',
+                'Sole', 'Skate', 'Dogfish', 'Ratfish', 'Octopus', 'Sea Bass'
+            ],
+            'atlantic-north': [
+                'Striped Bass', 'Bluefish', 'Atlantic Cod', 'Haddock', 'Pollock',
+                'Flounder', 'Fluke', 'Scup', 'Tautog', 'Black Sea Bass',
+                'Weakfish', 'Atlantic Mackerel', 'Atlantic Bonito', 'False Albacore',
+                'Lobster', 'Blue Crab', 'Clams', 'Mussels', 'Oysters'
+            ],
+            'hawaii': [
+                'Mahi Mahi', 'Ahi (Yellowfin)', 'Aku (Skipjack)', 'Ono (Wahoo)',
+                'Blue Marlin', 'Striped Marlin', 'Spearfish', 'Sailfish',
+                'Ulua (Giant Trevally)', 'Papio (Trevally)', 'Bonefish', 'Barracuda',
+                'Opah', 'Monchong', 'Opakapaka', 'Onaga', 'Uku', 'Nabeta', 'Kawakawa'
+            ],
+            'great-lakes': [
+                'Lake Trout', 'Brown Trout', 'Rainbow Trout', 'Steelhead',
+                'Chinook Salmon', 'Coho Salmon', 'Atlantic Salmon', 'Walleye',
+                'Yellow Perch', 'Northern Pike', 'Muskie', 'Smallmouth Bass',
+                'Largemouth Bass', 'Rock Bass', 'White Perch', 'White Bass',
+                'Channel Catfish', 'Lake Sturgeon', 'Burbot', 'Whitefish'
+            ]
+        };
+
+        Object.entries(speciesDatabase).forEach(([region, species]) => {
+            document.write(`<div class="region">`);
+            document.write(`<h3>${region.replace(/-/g, ' ').toUpperCase()}</h3>`);
+            document.write(`<p class="species-count">${species.length} species</p>`);
+            document.write(`<p>Sample: ${species.slice(0, 5).join(', ')}...</p>`);
+            document.write(`</div>`);
+        });
+        
+        // Count total unique species
+        const allSpecies = new Set();
+        Object.values(speciesDatabase).forEach(regionSpecies => {
+            regionSpecies.forEach(species => allSpecies.add(species));
+        });
+        
+        document.write(`<div style="margin-top: 30px; padding: 15px; background: #e3f2fd; border-radius: 5px;">`);
+        document.write(`<h3>Total Unique Species Across All Regions: ${allSpecies.size}</h3>`);
+        document.write(`</div>`);
+    </script>
+</body>
+</html>

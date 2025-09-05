@@ -397,19 +397,23 @@
                 <h2>Log Catch</h2>
             </div>
             <div class="content">
+                <label>Region Filter:</label>
+                <select id="regionFilter" onchange="app.filterSpeciesByRegion()" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ddd;">
+                    <option value="all">All Species</option>
+                    <option value="pacific-nw-salt">Pacific Northwest - Saltwater</option>
+                    <option value="pacific-nw-fresh">Pacific Northwest - Freshwater</option>
+                    <option value="atlantic-north">Atlantic North (Maine to Virginia)</option>
+                    <option value="atlantic-south">Atlantic South (Carolinas to Florida)</option>
+                    <option value="gulf">Gulf of Mexico</option>
+                    <option value="hawaii">Hawaii & Pacific Islands</option>
+                    <option value="great-lakes">Great Lakes</option>
+                    <option value="southern-fresh">Southern Freshwater</option>
+                    <option value="rockies">Rocky Mountain Waters</option>
+                </select>
+                
                 <label>Species:</label>
                 <div class="species-selector" id="speciesSelector">
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Halibut')">Halibut</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Cod')">Cod</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Lingcod')">Lingcod</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Greenling')">Greenling</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Rockfish')">Rockfish</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Salmon')">Salmon</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Trout')">Trout</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Bass')">Bass</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Pike')">Pike</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Catfish')">Catfish</div>
-                    <div class="species-btn" onclick="app.selectSpecies(this, 'Other')">Other</div>
+                    <!-- Species buttons will be dynamically populated -->
                 </div>
                 
                 <input type="number" id="catchLength" placeholder="Length (inches)" oninput="app.calculateHalibutWeight()">
@@ -471,6 +475,23 @@
                 </div>
                 
                 <div style="margin-bottom: 20px;">
+                    <h3>Preferred Fishing Region</h3>
+                    <select id="regionSelect" onchange="app.updatePreferredRegion()" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                        <option value="pacific-nw-salt">Pacific Northwest - Saltwater</option>
+                        <option value="pacific-nw-fresh">Pacific Northwest - Freshwater</option>
+                        <option value="atlantic-north">Atlantic North (Maine to Virginia)</option>
+                        <option value="atlantic-south">Atlantic South (Carolinas to Florida)</option>
+                        <option value="gulf">Gulf of Mexico</option>
+                        <option value="hawaii">Hawaii & Pacific Islands</option>
+                        <option value="great-lakes">Great Lakes</option>
+                        <option value="southern-fresh">Southern Freshwater</option>
+                        <option value="rockies">Rocky Mountain Waters</option>
+                        <option value="all">All Regions</option>
+                    </select>
+                    <small style="color: #666;">This sets your default species list when logging catches</small>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
                     <h3>Sync Settings</h3>
                     <label style="display: flex; align-items: center; gap: 10px;">
                         <input type="checkbox" id="autoSync" checked>
@@ -517,6 +538,66 @@
             sessionTimer: null,
             gpsInterval: null,
             
+            // Comprehensive species database by region
+            speciesDatabase: {
+                'pacific-nw-salt': [
+                    'Halibut', 'Lingcod', 'Rockfish', 'Chinook Salmon', 'Coho Salmon', 
+                    'Pink Salmon', 'Chum Salmon', 'Sockeye Salmon', 'Dungeness Crab',
+                    'Spot Shrimp', 'Black Cod', 'Cabezon', 'Greenling', 'Flounder',
+                    'Sole', 'Skate', 'Dogfish', 'Ratfish', 'Octopus', 'Sea Bass'
+                ],
+                'pacific-nw-fresh': [
+                    'Rainbow Trout', 'Cutthroat Trout', 'Steelhead', 'Brook Trout',
+                    'Bull Trout', 'Lake Trout', 'Kokanee', 'Sturgeon', 'Smallmouth Bass',
+                    'Largemouth Bass', 'Walleye', 'Northern Pike', 'Yellow Perch',
+                    'Crappie', 'Bluegill', 'Catfish', 'Whitefish'
+                ],
+                'atlantic-north': [
+                    'Striped Bass', 'Bluefish', 'Atlantic Cod', 'Haddock', 'Pollock',
+                    'Flounder', 'Fluke', 'Scup', 'Tautog', 'Black Sea Bass',
+                    'Weakfish', 'Atlantic Mackerel', 'Atlantic Bonito', 'False Albacore',
+                    'Lobster', 'Blue Crab', 'Clams', 'Mussels', 'Oysters'
+                ],
+                'atlantic-south': [
+                    'Red Drum', 'Spotted Seatrout', 'Flounder', 'Sheepshead', 'Black Drum',
+                    'Pompano', 'Permit', 'Cobia', 'King Mackerel', 'Spanish Mackerel',
+                    'Tarpon', 'Snook', 'Grouper', 'Snapper', 'Amberjack',
+                    'Tripletail', 'Bluefish', 'Jack Crevalle', 'Ladyfish'
+                ],
+                'gulf': [
+                    'Red Snapper', 'Grouper', 'King Mackerel', 'Spanish Mackerel',
+                    'Cobia', 'Amberjack', 'Mahi Mahi', 'Wahoo', 'Tuna',
+                    'Red Drum', 'Speckled Trout', 'Flounder', 'Sheepshead', 'Tripletail',
+                    'Tarpon', 'Pompano', 'Permit', 'Jack Crevalle', 'Shark'
+                ],
+                'hawaii': [
+                    'Mahi Mahi', 'Ahi (Yellowfin)', 'Aku (Skipjack)', 'Ono (Wahoo)',
+                    'Blue Marlin', 'Striped Marlin', 'Spearfish', 'Sailfish',
+                    'Ulua (Giant Trevally)', 'Papio (Trevally)', 'Bonefish', 'Barracuda',
+                    'Opah', 'Monchong', 'Opakapaka', 'Onaga', 'Uku', 'Nabeta', 'Kawakawa'
+                ],
+                'great-lakes': [
+                    'Lake Trout', 'Brown Trout', 'Rainbow Trout', 'Steelhead',
+                    'Chinook Salmon', 'Coho Salmon', 'Atlantic Salmon', 'Walleye',
+                    'Yellow Perch', 'Northern Pike', 'Muskie', 'Smallmouth Bass',
+                    'Largemouth Bass', 'Rock Bass', 'White Perch', 'White Bass',
+                    'Channel Catfish', 'Lake Sturgeon', 'Burbot', 'Whitefish'
+                ],
+                'southern-fresh': [
+                    'Largemouth Bass', 'Spotted Bass', 'Smallmouth Bass', 'Striped Bass',
+                    'White Bass', 'Crappie', 'Bluegill', 'Redear Sunfish',
+                    'Channel Catfish', 'Blue Catfish', 'Flathead Catfish', 'Bullhead',
+                    'White Perch', 'Yellow Perch', 'Freshwater Drum', 'Gar',
+                    'Bowfin', 'Paddlefish', 'Buffalo', 'Carp'
+                ],
+                'rockies': [
+                    'Rainbow Trout', 'Brown Trout', 'Brook Trout', 'Cutthroat Trout',
+                    'Bull Trout', 'Lake Trout', 'Golden Trout', 'Arctic Grayling',
+                    'Mountain Whitefish', 'Kokanee Salmon', 'Northern Pike', 'Walleye',
+                    'Yellow Perch', 'Smallmouth Bass', 'Largemouth Bass', 'Tiger Muskie'
+                ]
+            },
+            
             init() {
                 this.checkBackendStatus();
                 setInterval(() => this.checkBackendStatus(), 30000);
@@ -560,6 +641,18 @@
                 }
                 if (screenId === 'activeScreen') {
                     this.updateActiveSessionDisplay();
+                }
+                if (screenId === 'settingsScreen') {
+                    // Load saved settings
+                    const units = localStorage.getItem('units') || 'imperial';
+                    document.getElementById('unitsSelect').value = units;
+                    
+                    const region = localStorage.getItem('preferredRegion') || 'pacific-nw-salt';
+                    document.getElementById('regionSelect').value = region;
+                    
+                    if (this.currentUser) {
+                        document.getElementById('userEmail').textContent = this.currentUser;
+                    }
                 }
             },
             
@@ -820,7 +913,47 @@
                 this.selectedSpecies = null;
                 document.querySelectorAll('.species-btn').forEach(b => b.classList.remove('selected'));
                 
+                // Load saved region preference or default to Pacific NW
+                const savedRegion = localStorage.getItem('preferredRegion') || 'pacific-nw-salt';
+                document.getElementById('regionFilter').value = savedRegion;
+                this.filterSpeciesByRegion();
+                
                 this.showScreen('addCatchScreen');
+            },
+            
+            filterSpeciesByRegion() {
+                const regionFilter = document.getElementById('regionFilter');
+                const selectedRegion = regionFilter.value;
+                const speciesSelector = document.getElementById('speciesSelector');
+                
+                // Save preference
+                localStorage.setItem('preferredRegion', selectedRegion);
+                
+                let speciesToShow = [];
+                
+                if (selectedRegion === 'all') {
+                    // Combine all unique species
+                    const allSpecies = new Set();
+                    Object.values(this.speciesDatabase).forEach(regionSpecies => {
+                        regionSpecies.forEach(species => allSpecies.add(species));
+                    });
+                    speciesToShow = Array.from(allSpecies).sort();
+                } else if (this.speciesDatabase[selectedRegion]) {
+                    speciesToShow = this.speciesDatabase[selectedRegion];
+                }
+                
+                // Always add "Other" option at the end
+                speciesToShow.push('Other');
+                
+                // Clear and populate species buttons
+                speciesSelector.innerHTML = '';
+                speciesToShow.forEach(species => {
+                    const btn = document.createElement('div');
+                    btn.className = 'species-btn';
+                    btn.textContent = species;
+                    btn.onclick = () => this.selectSpecies(btn, species);
+                    speciesSelector.appendChild(btn);
+                });
             },
             
             selectSpecies(btn, species) {
@@ -842,7 +975,8 @@
             },
             
             calculateHalibutWeight() {
-                if (this.selectedSpecies !== 'Halibut') return;
+                // Check if selected species is any type of halibut
+                if (!this.selectedSpecies || !this.selectedSpecies.toLowerCase().includes('halibut')) return;
                 
                 const lengthInput = document.getElementById('catchLength');
                 const weightInput = document.getElementById('catchWeight');
@@ -1125,6 +1259,12 @@ ${session.catches.map(c => `\n- ${c.species} ${c.length ? c.length + 'in' : ''} 
                 const units = document.getElementById('unitsSelect').value;
                 localStorage.setItem('units', units);
                 alert(`Units changed to ${units}`);
+            },
+            
+            updatePreferredRegion() {
+                const region = document.getElementById('regionSelect').value;
+                localStorage.setItem('preferredRegion', region);
+                alert(`Preferred region set to ${document.getElementById('regionSelect').options[document.getElementById('regionSelect').selectedIndex].text}`);
             },
             
             exportData() {
