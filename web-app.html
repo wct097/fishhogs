@@ -404,7 +404,7 @@
                     <option value="pacific-nw-fresh">Pacific Northwest - Freshwater</option>
                     <option value="atlantic-north">Atlantic North (Maine to Virginia)</option>
                     <option value="atlantic-south">Atlantic South (Carolinas to Florida)</option>
-                    <option value="gulf">Gulf of Mexico</option>
+                    <option value="gulf">Gulf of America</option>
                     <option value="hawaii">Hawaii & Pacific Islands</option>
                     <option value="great-lakes">Great Lakes</option>
                     <option value="southern-fresh">Southern Freshwater</option>
@@ -481,7 +481,7 @@
                         <option value="pacific-nw-fresh">Pacific Northwest - Freshwater</option>
                         <option value="atlantic-north">Atlantic North (Maine to Virginia)</option>
                         <option value="atlantic-south">Atlantic South (Carolinas to Florida)</option>
-                        <option value="gulf">Gulf of Mexico</option>
+                        <option value="gulf">Gulf of America</option>
                         <option value="hawaii">Hawaii & Pacific Islands</option>
                         <option value="great-lakes">Great Lakes</option>
                         <option value="southern-fresh">Southern Freshwater</option>
@@ -942,7 +942,8 @@
                     speciesToShow = this.speciesDatabase[selectedRegion];
                 }
                 
-                // Always add "Other" option at the end
+                // Remove any existing "Other" entries and add it once at the end
+                speciesToShow = speciesToShow.filter(species => species !== 'Other');
                 speciesToShow.push('Other');
                 
                 // Clear and populate species buttons
