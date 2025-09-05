@@ -1,8 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {DatabaseService} from './database';
-
-const API_BASE_URL = 'http://localhost:8000'; // Configure based on environment
+import {API_BASE_URL} from '../config/api';
 
 export class SyncService {
   private static isSyncing = false;

@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,22 @@ import {useNavigation} from '@react-navigation/native';
 import {useSessionStore} from '../stores/sessionStore';
 import {TrackingService} from '../services/tracking';
 import {SyncService} from '../services/sync';
+import {HealthService} from '../services/health';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const {activeSession, startSession, stopSession, loadSessions} = useSessionStore();
+  const [backendStatus, setBackendStatus] = useState<string>('Unknown');
   
   useEffect(() => {
     loadSessions();
+    checkHealth();
   }, []);
+  
+  const checkHealth = async () => {
+    const result = await HealthService.testConnectivity();
+    setBackendStatus(result.backend ? 'Connected' : 'Disconnected');
+  };
   
   const handleStartSession = async () => {
     try {
@@ -113,6 +121,9 @@ const HomeScreen = () => {
         </Text>
         <Text style={styles.statusText}>
           Session: {activeSession ? 'Active' : 'Inactive'}
+        </Text>
+        <Text style={styles.statusText}>
+          Backend: {backendStatus}
         </Text>
       </View>
     </ScrollView>

@@ -1,8 +1,7 @@
 import {create} from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000';
+import {API_BASE_URL} from '../config/api';
 
 interface AuthState {
   isAuthenticated: boolean;
