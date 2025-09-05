@@ -358,12 +358,8 @@
                 <h2>Active Session</h2>
             </div>
             <div class="content">
-                <div class="active-session" id="activeSessionInfo">
-                    <h3>Session Active</h3>
-                    <div class="timer" id="sessionTimer">00:00:00</div>
-                    <div class="gps-indicator">
-                        <span class="pulse"></span> Tracking GPS
-                    </div>
+                <div id="sessionStatusArea">
+                    <!-- Session status will be dynamically updated -->
                 </div>
                 
                 <div class="map-placeholder">
@@ -371,10 +367,11 @@
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <button style="background: #9C27B0; font-size: 18px;" onclick="app.capturePhoto()">📸 Take Photo</button>
-                    <button style="background: #4CAF50; font-size: 18px;" onclick="app.showAddCatch()">🐟 Log Catch</button>
+                    <button id="photoBtn" style="background: #9C27B0; font-size: 18px;" onclick="app.capturePhoto()">📸 Take Photo</button>
+                    <button id="catchBtn" style="background: #4CAF50; font-size: 18px;" onclick="app.showAddCatch()">🐟 Log Catch</button>
                 </div>
-                <button class="btn-danger" onclick="app.endSession()">End Session</button>
+                <button id="endSessionBtn" class="btn-danger" onclick="app.endSession()" style="display: none;">End Session</button>
+                <button id="startSessionBtn" class="btn-success" onclick="app.startSessionFromActive()" style="display: none;">Start New Session</button>
                 
                 <div id="catchList"></div>
             </div>
@@ -552,9 +549,8 @@
                 if (screenId === 'historyScreen') {
                     this.loadHistory();
                 }
-                if (screenId === 'activeScreen' && !this.activeSession) {
-                    this.showScreen('homeScreen');
-                    this.showMessage('loginMessage', 'No active session', 'error');
+                if (screenId === 'activeScreen') {
+                    this.updateActiveSessionDisplay();
                 }
             },
             
@@ -677,7 +673,8 @@
                     started_at: new Date().toISOString(),
                     title: `Session ${new Date().toLocaleDateString()}`,
                     gps_points: [],
-                    catches: []
+                    catches: [],
+                    photos: []
                 };
                 
                 // Start GPS tracking
@@ -686,15 +683,39 @@
                 // Start timer
                 this.startTimer();
                 
-                // Update UI
-                document.getElementById('sessionBtn').textContent = 'End Session';
-                document.getElementById('sessionBtn').className = 'btn-danger';
-                document.getElementById('sessionStatus').innerHTML = `
-                    <div class="message success">Session Active - GPS Tracking</div>
-                `;
+                // Update UI on home screen
+                const sessionBtn = document.getElementById('sessionBtn');
+                if (sessionBtn) {
+                    sessionBtn.textContent = 'End Session';
+                    sessionBtn.className = 'btn-danger';
+                }
+                
+                const sessionStatus = document.getElementById('sessionStatus');
+                if (sessionStatus) {
+                    sessionStatus.innerHTML = `
+                        <div class="message success">Session Active - GPS Tracking</div>
+                    `;
+                }
+                
+                // Update active session display if visible
+                const photoBtn = document.getElementById('photoBtn');
+                if (photoBtn) {
+                    photoBtn.disabled = false;
+                    photoBtn.style.opacity = '1';
+                }
+                const catchBtn = document.getElementById('catchBtn');
+                if (catchBtn) {
+                    catchBtn.disabled = false;
+                    catchBtn.style.opacity = '1';
+                }
                 
                 this.updateStats();
                 this.saveToLocalStorage();
+                
+                // Update active session display if on that screen
+                if (document.getElementById('activeScreen').classList.contains('active')) {
+                    this.updateActiveSessionDisplay();
+                }
             },
             
             endSession() {
@@ -707,16 +728,26 @@
                 this.stopGPSTracking();
                 this.stopTimer();
                 
-                // Update UI
-                document.getElementById('sessionBtn').textContent = 'Start Fishing Session';
-                document.getElementById('sessionBtn').className = 'btn-success';
-                document.getElementById('sessionStatus').innerHTML = `
-                    <div class="message success">Session ended - ${this.activeSession.gps_points.length} GPS points recorded</div>
-                `;
+                // Update UI on home screen if it exists
+                const sessionBtn = document.getElementById('sessionBtn');
+                if (sessionBtn) {
+                    sessionBtn.textContent = 'Start Fishing Session';
+                    sessionBtn.className = 'btn-success';
+                }
+                
+                const sessionStatus = document.getElementById('sessionStatus');
+                if (sessionStatus) {
+                    sessionStatus.innerHTML = `
+                        <div class="message success">Session ended - ${this.activeSession.gps_points.length} GPS points recorded</div>
+                    `;
+                }
                 
                 this.activeSession = null;
                 this.updateStats();
                 this.saveToLocalStorage();
+                
+                // Update active session display if on that screen
+                this.updateActiveSessionDisplay();
             },
             
             startGPSTracking() {
@@ -766,6 +797,10 @@
             },
             
             showAddCatch() {
+                if (!this.activeSession) {
+                    alert('Please start a session first');
+                    return;
+                }
                 this.showScreen('addCatchScreen');
             },
             
@@ -834,7 +869,70 @@
                 }
             },
             
+            updateActiveSessionDisplay() {
+                const statusArea = document.getElementById('sessionStatusArea');
+                const photoBtn = document.getElementById('photoBtn');
+                const catchBtn = document.getElementById('catchBtn');
+                const endBtn = document.getElementById('endSessionBtn');
+                const startBtn = document.getElementById('startSessionBtn');
+                
+                if (this.activeSession) {
+                    // Show active session info
+                    statusArea.innerHTML = `
+                        <div class="active-session">
+                            <h3>Session Active</h3>
+                            <div class="timer" id="sessionTimer">00:00:00</div>
+                            <div class="gps-indicator">
+                                <span class="pulse"></span> Tracking GPS (${this.activeSession.gps_points?.length || 0} points)
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Enable buttons
+                    photoBtn.disabled = false;
+                    catchBtn.disabled = false;
+                    endBtn.style.display = 'block';
+                    startBtn.style.display = 'none';
+                    
+                    // Restart timer if needed
+                    if (!this.sessionTimer) {
+                        this.startTimer();
+                    }
+                    
+                    // Update catch list
+                    this.updateCatchList();
+                } else {
+                    // Show no session message
+                    statusArea.innerHTML = `
+                        <div class="message" style="text-align: center; padding: 20px;">
+                            <h3>No Active Session</h3>
+                            <p style="color: #666; margin-top: 10px;">Start a new session to begin tracking</p>
+                        </div>
+                    `;
+                    
+                    // Disable buttons
+                    photoBtn.disabled = true;
+                    photoBtn.style.opacity = '0.5';
+                    catchBtn.disabled = true;
+                    catchBtn.style.opacity = '0.5';
+                    endBtn.style.display = 'none';
+                    startBtn.style.display = 'block';
+                    
+                    document.getElementById('catchList').innerHTML = '';
+                }
+            },
+            
+            startSessionFromActive() {
+                this.startSession();
+                this.updateActiveSessionDisplay();
+            },
+            
             capturePhoto() {
+                if (!this.activeSession) {
+                    alert('Please start a session first');
+                    return;
+                }
+                
                 // Simulate photo capture
                 const photoCount = (this.activeSession?.photos || []).length + 1;
                 const photo = {
