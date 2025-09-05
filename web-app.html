@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fishing Tracker - Web App</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .mobile-container {
+            max-width: 375px;
+            margin: 20px auto;
+            background: white;
+            min-height: 667px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 667px;
+        }
+        
+        .screen.active { display: flex; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .bottom-nav {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            padding: 10px 0;
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .nav-item.active { color: #667eea; }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        button:hover { background: #5a67d8; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+        }
+        
+        .btn-success {
+            background: #4CAF50;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            text-align: center;
+        }
+        
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .session-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        .session-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .active-session {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .catch-entry {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .species-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .species-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .species-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .gps-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: #e8f5e9;
+            color: #4CAF50;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .backend-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            font-size: 11px;
+            z-index: 100;
+        }
+        
+        .backend-status.online { color: #4CAF50; }
+        .backend-status.offline { color: #f44336; }
+        
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .map-placeholder {
+            background: #e0e0e0;
+            height: 200px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Backend Status Indicator -->
+        <div class="backend-status" id="backendStatus">
+            <span class="pulse"></span> Checking...
+        </div>
+
+        <!-- Login Screen -->
+        <div class="screen active" id="loginScreen">
+            <div class="header">
+                <h1>🎣 Fishing Tracker</h1>
+                <p>Track your fishing adventures</p>
+            </div>
+            <div class="content">
+                <div class="input-group">
+                    <input type="email" id="loginEmail" placeholder="Email" value="demo@fishing.com">
+                    <input type="password" id="loginPassword" placeholder="Password" value="demo123">
+                </div>
+                <button onclick="app.login()">Login</button>
+                <button class="btn-secondary" onclick="app.showScreen('registerScreen')">Create Account</button>
+                <div id="loginMessage"></div>
+            </div>
+        </div>
+
+        <!-- Register Screen -->
+        <div class="screen" id="registerScreen">
+            <div class="header">
+                <h2>Create Account</h2>
+            </div>
+            <div class="content">
+                <div class="input-group">
+                    <input type="email" id="regEmail" placeholder="Email">
+                    <input type="password" id="regPassword" placeholder="Password">
+                    <input type="password" id="regConfirm" placeholder="Confirm Password">
+                </div>
+                <button onclick="app.register()">Register</button>
+                <button class="btn-secondary" onclick="app.showScreen('loginScreen')">Back to Login</button>
+                <div id="regMessage"></div>
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div class="screen" id="homeScreen">
+            <div class="header">
+                <h2>Fishing Tracker</h2>
+                <div class="gps-indicator" id="gpsStatus">
+                    <span class="pulse"></span> GPS Ready
+                </div>
+            </div>
+            <div class="content">
+                <div class="status-bar">
+                    <div class="status-item">
+                        <div class="status-value" id="sessionCount">0</div>
+                        <div class="status-label">Sessions</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="catchCount">0</div>
+                        <div class="status-label">Catches</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="pointCount">0</div>
+                        <div class="status-label">GPS Points</div>
+                    </div>
+                </div>
+                
+                <div id="sessionStatus"></div>
+                
+                <button id="sessionBtn" class="btn-success" onclick="app.toggleSession()">
+                    Start Fishing Session
+                </button>
+                <button class="btn-secondary" onclick="app.syncData()">
+                    Sync Data
+                </button>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item active" onclick="app.showScreen('homeScreen')">
+                    🏠 Home
+                </div>
+                <div class="nav-item" onclick="app.showScreen('activeScreen')">
+                    📍 Active
+                </div>
+                <div class="nav-item" onclick="app.showScreen('historyScreen')">
+                    📜 History
+                </div>
+                <div class="nav-item" onclick="app.showScreen('settingsScreen')">
+                    ⚙️ Settings
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Session Screen -->
+        <div class="screen" id="activeScreen">
+            <div class="header">
+                <h2>Active Session</h2>
+            </div>
+            <div class="content">
+                <div class="active-session" id="activeSessionInfo">
+                    <h3>Session Active</h3>
+                    <div class="timer" id="sessionTimer">00:00:00</div>
+                    <div class="gps-indicator">
+                        <span class="pulse"></span> Tracking GPS
+                    </div>
+                </div>
+                
+                <div class="map-placeholder">
+                    <span>📍 Map View (GPS Tracking)</span>
+                </div>
+                
+                <button onclick="app.showAddCatch()">🐟 Log Catch</button>
+                <button class="btn-secondary" onclick="app.capturePhoto()">📸 Take Photo</button>
+                <button class="btn-danger" onclick="app.endSession()">End Session</button>
+                
+                <div id="catchList"></div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="app.showScreen('homeScreen')">
+                    🏠 Home
+                </div>
+                <div class="nav-item active" onclick="app.showScreen('activeScreen')">
+                    📍 Active
+                </div>
+                <div class="nav-item" onclick="app.showScreen('historyScreen')">
+                    📜 History
+                </div>
+                <div class="nav-item" onclick="app.showScreen('settingsScreen')">
+                    ⚙️ Settings
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Catch Modal -->
+        <div class="screen" id="addCatchScreen">
+            <div class="header">
+                <h2>Log Catch</h2>
+            </div>
+            <div class="content">
+                <label>Species:</label>
+                <div class="species-selector" id="speciesSelector">
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Bass')">Bass</div>
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Trout')">Trout</div>
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Salmon')">Salmon</div>
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Pike')">Pike</div>
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Catfish')">Catfish</div>
+                    <div class="species-btn" onclick="app.selectSpecies(this, 'Other')">Other</div>
+                </div>
+                
+                <input type="number" id="catchLength" placeholder="Length (cm)">
+                <input type="number" id="catchWeight" placeholder="Weight (kg) - Optional">
+                <input type="text" id="catchNotes" placeholder="Notes - Optional">
+                
+                <button onclick="app.saveCatch()">Save Catch</button>
+                <button class="btn-secondary" onclick="app.showScreen('activeScreen')">Cancel</button>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div class="screen" id="historyScreen">
+            <div class="header">
+                <h2>Session History</h2>
+            </div>
+            <div class="content">
+                <div class="history-list" id="historyList">
+                    <p style="text-align: center; color: #666;">No sessions yet</p>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="app.showScreen('homeScreen')">
+                    🏠 Home
+                </div>
+                <div class="nav-item" onclick="app.showScreen('activeScreen')">
+                    📍 Active
+                </div>
+                <div class="nav-item active" onclick="app.showScreen('historyScreen')">
+                    📜 History
+                </div>
+                <div class="nav-item" onclick="app.showScreen('settingsScreen')">
+                    ⚙️ Settings
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div class="screen" id="settingsScreen">
+            <div class="header">
+                <h2>Settings</h2>
+            </div>
+            <div class="content">
+                <div style="margin-bottom: 20px;">
+                    <h3>Account</h3>
+                    <p id="userEmail" style="color: #666; margin: 10px 0;"></p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h3>Units</h3>
+                    <select id="unitsSelect" onchange="app.updateUnits()">
+                        <option value="metric">Metric (cm/kg)</option>
+                        <option value="imperial">Imperial (in/lb)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <h3>Sync Settings</h3>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="autoSync" checked>
+                        <span>Auto-sync when online</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                        <input type="checkbox" id="wifiOnly">
+                        <span>Wi-Fi only</span>
+                    </label>
+                </div>
+                
+                <button class="btn-secondary" onclick="app.exportData()">Export Data</button>
+                <button class="btn-secondary" onclick="app.clearCache()">Clear Cache</button>
+                <button class="btn-danger" onclick="app.logout()">Logout</button>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" onclick="app.showScreen('homeScreen')">
+                    🏠 Home
+                </div>
+                <div class="nav-item" onclick="app.showScreen('activeScreen')">
+                    📍 Active
+                </div>
+                <div class="nav-item" onclick="app.showScreen('historyScreen')">
+                    📜 History
+                </div>
+                <div class="nav-item active" onclick="app.showScreen('settingsScreen')">
+                    ⚙️ Settings
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        const app = {
+            currentUser: null,
+            authToken: null,
+            activeSession: null,
+            sessions: [],
+            catches: [],
+            gpsPoints: [],
+            selectedSpecies: null,
+            sessionTimer: null,
+            gpsInterval: null,
+            
+            init() {
+                this.checkBackendStatus();
+                setInterval(() => this.checkBackendStatus(), 30000);
+                this.loadFromLocalStorage();
+                
+                if (this.authToken) {
+                    this.showScreen('homeScreen');
+                    this.updateStats();
+                }
+            },
+            
+            async checkBackendStatus() {
+                const statusEl = document.getElementById('backendStatus');
+                try {
+                    const response = await fetch(`${API_URL}/health`);
+                    if (response.ok) {
+                        statusEl.className = 'backend-status online';
+                        statusEl.innerHTML = '<span class="pulse"></span> Backend Online';
+                    }
+                } catch (error) {
+                    statusEl.className = 'backend-status offline';
+                    statusEl.innerHTML = 'Backend Offline';
+                }
+            },
+            
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+                
+                // Update nav
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                
+                if (screenId === 'historyScreen') {
+                    this.loadHistory();
+                }
+                if (screenId === 'activeScreen' && !this.activeSession) {
+                    this.showScreen('homeScreen');
+                    this.showMessage('loginMessage', 'No active session', 'error');
+                }
+            },
+            
+            showMessage(elementId, message, type = 'success') {
+                const el = document.getElementById(elementId);
+                if (el) {
+                    el.className = `message ${type}`;
+                    el.textContent = message;
+                    setTimeout(() => el.textContent = '', 3000);
+                }
+            },
+            
+            async login() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                try {
+                    const response = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({email, password})
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.authToken = data.access_token;
+                        this.currentUser = email;
+                        this.saveToLocalStorage();
+                        this.showScreen('homeScreen');
+                        this.updateStats();
+                        document.getElementById('userEmail').textContent = email;
+                    } else {
+                        // Try registration if login fails
+                        await this.quickRegister(email, password);
+                    }
+                } catch (error) {
+                    this.showMessage('loginMessage', 'Backend offline - using local mode', 'error');
+                    // Allow local-only mode
+                    this.currentUser = email;
+                    this.authToken = 'local-' + Date.now();
+                    this.saveToLocalStorage();
+                    this.showScreen('homeScreen');
+                    this.updateStats();
+                }
+            },
+            
+            async quickRegister(email, password) {
+                try {
+                    const response = await fetch(`${API_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({email, password})
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.authToken = data.access_token;
+                        this.currentUser = email;
+                        this.saveToLocalStorage();
+                        this.showScreen('homeScreen');
+                        this.updateStats();
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                }
+            },
+            
+            async register() {
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                const confirm = document.getElementById('regConfirm').value;
+                
+                if (password !== confirm) {
+                    this.showMessage('regMessage', 'Passwords do not match', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}/auth/register`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({email, password})
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.authToken = data.access_token;
+                        this.currentUser = email;
+                        this.saveToLocalStorage();
+                        this.showScreen('homeScreen');
+                        this.updateStats();
+                    } else {
+                        const error = await response.json();
+                        this.showMessage('regMessage', error.error || 'Registration failed', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('regMessage', 'Backend offline', 'error');
+                }
+            },
+            
+            logout() {
+                this.currentUser = null;
+                this.authToken = null;
+                this.activeSession = null;
+                this.clearLocalStorage();
+                this.showScreen('loginScreen');
+            },
+            
+            toggleSession() {
+                if (this.activeSession) {
+                    this.endSession();
+                } else {
+                    this.startSession();
+                }
+            },
+            
+            startSession() {
+                this.activeSession = {
+                    id: this.generateId(),
+                    started_at: new Date().toISOString(),
+                    title: `Session ${new Date().toLocaleDateString()}`,
+                    gps_points: [],
+                    catches: []
+                };
+                
+                // Start GPS tracking
+                this.startGPSTracking();
+                
+                // Start timer
+                this.startTimer();
+                
+                // Update UI
+                document.getElementById('sessionBtn').textContent = 'End Session';
+                document.getElementById('sessionBtn').className = 'btn-danger';
+                document.getElementById('sessionStatus').innerHTML = `
+                    <div class="message success">Session Active - GPS Tracking</div>
+                `;
+                
+                this.updateStats();
+                this.saveToLocalStorage();
+            },
+            
+            endSession() {
+                if (!this.activeSession) return;
+                
+                this.activeSession.ended_at = new Date().toISOString();
+                this.sessions.push(this.activeSession);
+                
+                // Stop GPS and timer
+                this.stopGPSTracking();
+                this.stopTimer();
+                
+                // Update UI
+                document.getElementById('sessionBtn').textContent = 'Start Fishing Session';
+                document.getElementById('sessionBtn').className = 'btn-success';
+                document.getElementById('sessionStatus').innerHTML = `
+                    <div class="message success">Session ended - ${this.activeSession.gps_points.length} GPS points recorded</div>
+                `;
+                
+                this.activeSession = null;
+                this.updateStats();
+                this.saveToLocalStorage();
+            },
+            
+            startGPSTracking() {
+                // Simulate GPS tracking every 5 seconds (would be 5 minutes in real app)
+                this.gpsInterval = setInterval(() => {
+                    if (this.activeSession) {
+                        const point = {
+                            lat: 37.7749 + (Math.random() - 0.5) * 0.01,
+                            lon: -122.4194 + (Math.random() - 0.5) * 0.01,
+                            timestamp: new Date().toISOString(),
+                            accuracy: Math.floor(Math.random() * 10) + 5
+                        };
+                        this.activeSession.gps_points.push(point);
+                        this.gpsPoints.push(point);
+                        this.updateStats();
+                    }
+                }, 5000); // Every 5 seconds for demo
+            },
+            
+            stopGPSTracking() {
+                if (this.gpsInterval) {
+                    clearInterval(this.gpsInterval);
+                    this.gpsInterval = null;
+                }
+            },
+            
+            startTimer() {
+                const startTime = new Date(this.activeSession.started_at);
+                this.sessionTimer = setInterval(() => {
+                    const elapsed = Date.now() - startTime.getTime();
+                    const hours = Math.floor(elapsed / 3600000);
+                    const minutes = Math.floor((elapsed % 3600000) / 60000);
+                    const seconds = Math.floor((elapsed % 60000) / 1000);
+                    
+                    const timerEl = document.getElementById('sessionTimer');
+                    if (timerEl) {
+                        timerEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            },
+            
+            stopTimer() {
+                if (this.sessionTimer) {
+                    clearInterval(this.sessionTimer);
+                    this.sessionTimer = null;
+                }
+            },
+            
+            showAddCatch() {
+                this.showScreen('addCatchScreen');
+            },
+            
+            selectSpecies(btn, species) {
+                document.querySelectorAll('.species-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.selectedSpecies = species;
+            },
+            
+            saveCatch() {
+                if (!this.selectedSpecies) {
+                    alert('Please select a species');
+                    return;
+                }
+                
+                const catchData = {
+                    id: this.generateId(),
+                    species: this.selectedSpecies,
+                    length: document.getElementById('catchLength').value,
+                    weight: document.getElementById('catchWeight').value,
+                    notes: document.getElementById('catchNotes').value,
+                    timestamp: new Date().toISOString(),
+                    lat: 37.7749 + (Math.random() - 0.5) * 0.01,
+                    lon: -122.4194 + (Math.random() - 0.5) * 0.01
+                };
+                
+                if (this.activeSession) {
+                    this.activeSession.catches.push(catchData);
+                }
+                this.catches.push(catchData);
+                
+                // Clear form
+                document.getElementById('catchLength').value = '';
+                document.getElementById('catchWeight').value = '';
+                document.getElementById('catchNotes').value = '';
+                this.selectedSpecies = null;
+                
+                this.updateStats();
+                this.saveToLocalStorage();
+                this.showScreen('activeScreen');
+                
+                // Update catch list
+                this.updateCatchList();
+            },
+            
+            updateCatchList() {
+                const listEl = document.getElementById('catchList');
+                if (!listEl || !this.activeSession) return;
+                
+                if (this.activeSession.catches.length === 0) {
+                    listEl.innerHTML = '<p style="text-align: center; color: #666;">No catches yet</p>';
+                } else {
+                    listEl.innerHTML = '<h3>Catches</h3>' + 
+                        this.activeSession.catches.map(c => `
+                            <div class="catch-entry">
+                                <strong>${c.species}</strong>
+                                ${c.length ? ` - ${c.length}cm` : ''}
+                                ${c.weight ? ` - ${c.weight}kg` : ''}
+                                ${c.notes ? `<br><small>${c.notes}</small>` : ''}
+                            </div>
+                        `).join('');
+                }
+            },
+            
+            capturePhoto() {
+                alert('Photo capture would open camera here\nPhoto would be geotagged and saved');
+            },
+            
+            loadHistory() {
+                const listEl = document.getElementById('historyList');
+                if (this.sessions.length === 0) {
+                    listEl.innerHTML = '<p style="text-align: center; color: #666;">No sessions yet</p>';
+                } else {
+                    listEl.innerHTML = this.sessions.map(s => `
+                        <div class="session-card" onclick="app.viewSession('${s.id}')">
+                            <h4>${s.title}</h4>
+                            <p>Date: ${new Date(s.started_at).toLocaleDateString()}</p>
+                            <p>Duration: ${this.calculateDuration(s.started_at, s.ended_at)}</p>
+                            <p>GPS Points: ${s.gps_points.length} | Catches: ${s.catches.length}</p>
+                        </div>
+                    `).join('');
+                }
+            },
+            
+            viewSession(sessionId) {
+                const session = this.sessions.find(s => s.id === sessionId);
+                if (session) {
+                    alert(`Session Details:\n
+Title: ${session.title}
+Started: ${new Date(session.started_at).toLocaleString()}
+Duration: ${this.calculateDuration(session.started_at, session.ended_at)}
+GPS Points: ${session.gps_points.length}
+Catches: ${session.catches.length}
+${session.catches.map(c => `\n- ${c.species} ${c.length ? c.length + 'cm' : ''}`).join('')}`);
+                }
+            },
+            
+            calculateDuration(start, end) {
+                if (!end) return 'Active';
+                const ms = new Date(end) - new Date(start);
+                const hours = Math.floor(ms / 3600000);
+                const minutes = Math.floor((ms % 3600000) / 60000);
+                return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            },
+            
+            async syncData() {
+                alert('Sync would upload:\n' +
+                    `- ${this.sessions.length} sessions\n` +
+                    `- ${this.gpsPoints.length} GPS points\n` +
+                    `- ${this.catches.length} catches\n\n` +
+                    'And download any server changes');
+            },
+            
+            updateStats() {
+                document.getElementById('sessionCount').textContent = this.sessions.length;
+                document.getElementById('catchCount').textContent = this.catches.length;
+                document.getElementById('pointCount').textContent = this.gpsPoints.length;
+            },
+            
+            updateUnits() {
+                const units = document.getElementById('unitsSelect').value;
+                localStorage.setItem('units', units);
+                alert(`Units changed to ${units}`);
+            },
+            
+            exportData() {
+                const data = {
+                    sessions: this.sessions,
+                    catches: this.catches,
+                    gps_points: this.gpsPoints,
+                    exported_at: new Date().toISOString()
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fishing-data-${Date.now()}.json`;
+                a.click();
+            },
+            
+            clearCache() {
+                if (confirm('Clear all cached data?')) {
+                    this.sessions = [];
+                    this.catches = [];
+                    this.gpsPoints = [];
+                    this.updateStats();
+                    this.saveToLocalStorage();
+                    alert('Cache cleared');
+                }
+            },
+            
+            generateId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            },
+            
+            saveToLocalStorage() {
+                localStorage.setItem('fishingApp', JSON.stringify({
+                    currentUser: this.currentUser,
+                    authToken: this.authToken,
+                    activeSession: this.activeSession,
+                    sessions: this.sessions,
+                    catches: this.catches,
+                    gpsPoints: this.gpsPoints
+                }));
+            },
+            
+            loadFromLocalStorage() {
+                const data = localStorage.getItem('fishingApp');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    this.currentUser = parsed.currentUser;
+                    this.authToken = parsed.authToken;
+                    this.activeSession = parsed.activeSession;
+                    this.sessions = parsed.sessions || [];
+                    this.catches = parsed.catches || [];
+                    this.gpsPoints = parsed.gpsPoints || [];
+                }
+            },
+            
+            clearLocalStorage() {
+                localStorage.removeItem('fishingApp');
+            }
+        };
+        
+        // Initialize app
+        app.init();
+    </script>
+</body>
+</html>
