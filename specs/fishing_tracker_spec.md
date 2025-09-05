@@ -1,4 +1,4 @@
-# Fishing Tracker App --- Product & Technical Spec (v0.1)
+# Fishing Tracker App --- Product & Technical Spec (v0.3)
 
 **Date:** 2025‑09‑05\
 **Platforms:** iOS & Android (single codebase)\
@@ -11,86 +11,257 @@
 
 A mobile app for anglers to **record fishing sessions offline** and
 **sync when a connection is available**. While a session is active, the
-app captures a **GPS fix every 5 minutes** (timestamp + latitude +
-longitude + accuracy + optional speed/heading), lets users **take
-photos** tied to location/time, and log **catches** (species, length,
-optional weight/notes). Data persists locally first and syncs to a
-backend when online.
+app captures a **GPS fix every 5 minutes**, lets users **take photos**
+tied to location/time, and log **catches**. Data persists locally first
+and syncs to a backend when online.
 
 ------------------------------------------------------------------------
 
 ## 2) Goals / Non‑Goals
 
-**Goals** - Start/stop fishing sessions. - Background-safe,
-battery-conscious GPS sampling every 5 minutes during active sessions. -
-Offline-first local storage of sessions, track points, photos, and
-catches. - Opportunistic background sync (Wi‑Fi or cellular;
-user-configurable). - Simple, trustworthy UX: clear status of tracking,
-sampling interval, and sync state.
+**Goals** - Start/stop fishing sessions - GPS breadcrumb capture every 5
+min - Offline-first local storage - Sync when online - Simple,
+transparent UX
 
-**Non‑Goals (MVP)** - Social features (sharing feeds, comments). - Live
-maps with online-only tiles. - Advanced analytics beyond basic per‑trip
-summaries. - Wearables or external GPS integrations.
+**Non‑Goals (MVP)** - Social features - Wearable integration - Advanced
+analytics - Map tile caching (future)
 
 ------------------------------------------------------------------------
 
-## 3) Personas & Primary Use Cases
+## 3) Personas & Use Cases
 
--   **Solo Angler:** wants to record trips in remote areas without
-    service; later reviews route, photos, and catches.
--   **Guide / Charter Captain:** records clients' trips; may need
-    multiple sessions per day and quick data entry.
+-   **Solo Angler**: track remote trips offline, sync later
+-   **Guide**: track multiple daily sessions
 
-**Use Cases** 1. Start a session, fish all day offline, take photos, log
-catches, return to coverage and sync. 2. Pause/resume or briefly switch
-apps while tracking continues in background (within platform
-constraints). 3. Review past sessions and see route "breadcrumbs,"
-photos, and catch entries.
+Use Cases: 1. Offline session + sync later 2. Background tracking while
+multitasking 3. Review past sessions with tracks, photos, catches
 
 ------------------------------------------------------------------------
 
-## 4) Requirements
+## 4) Requirements (Client-Side)
 
-### 4.1 Functional
+-   Session lifecycle (start/stop)
+-   Location sampling every 5 min
+-   Photos with lat/lon + timestamp
+-   Catch entries (species, length, optional weight/notes)
+-   Offline-first local DB
+-   Background sync with retries
+-   History view of sessions
 
--   **Session Lifecycle**
-    -   Create session (start time auto‑set; optional waterbody/notes).
-    -   While active, record a track point every **5 minutes**.
-    -   Stop session (end time set; compute duration; show summary).
-    -   Resume is out‑of‑scope; instead, start a new session (MVP) ---
-        *or* we can allow a single active session with pause/resume
-        (nice‑to‑have).
--   **Location Sampling**
-    -   Persist **lat, lon, timestamp, horizontalAccuracy**; optionally
-        **speed, heading, altitude** when available.
-    -   Target cadence: **1 point/5 min** while a session is active
-        (foreground or background). Note: exact 5‑minute cadence is
-        **best‑effort, not real‑time guaranteed** due to OS power
-        policies.
-    -   If GPS is disabled or permissions revoked, surface a clear error
-        state and stop tracking.
--   **Photos**
-    -   Take pictures during a session via in‑app camera or camera roll
-        import (MVP: in‑app only).
-    -   For each photo, store **file path/URI**, **timestamp**,
-        **lat/lon** (from current fix when captured) and **session id**.
--   **Catches**
-    -   Add a catch entry with **species** (free text or picklist),
-        **length** (units configurable), optional **weight**, optional
-        **notes**, and implicit **timestamp** & **current location** if
-        available.
--   **Offline‑First & Sync**
-    -   All data is first written to the **local database**.
-    -   Background sync when network available; user can trigger manual
-        sync.
-    -   Conflicts resolved deterministically (see §8).
--   **History**
-    -   List past sessions; tap to see details: summary stats, track
-        points plotted, photos, and catches.
--   **Settings**
-    -   Units (length: cm/in; weight: kg/lb).
-    -   Sampling interval (fixed at 5 min for MVP; make it configurable
-        later).
-    -   Sync policy: Wi‑Fi only vs Wi‑Fi + cellular.
-    -   Species picklist management (optional in MVP; default common
-        list).
+------------------------------------------------------------------------
+
+## 5) Backend Architecture
+
+### 5.1 API Endpoints
+
+-   `POST /auth/register` → create new user (with email verification)\
+-   `POST /auth/login` → JWT + refresh token\
+-   `POST /auth/refresh` → new token\
+-   `POST /auth/password-reset` → request reset email\
+-   `POST /sync/up` → upload deltas (sessions, track_points, catches,
+    photo metadata)\
+-   `POST /sync/down` → fetch server deltas since timestamp\
+-   `POST /photos/presigned-url` → presigned S3 URL for direct photo
+    upload
+
+### 5.2 Example API Documentation
+
+**/sync/up Request**
+
+``` json
+{
+  "last_sync_timestamp": "2025-09-05T09:00:00Z",
+  "sessions": [{ "id": "uuid", "started_at": "...", "ended_at": "..." }],
+  "track_points": [{ "session_id": "uuid", "ts": 1736123456789, "lat": 34.1, "lon": -119.1 }],
+  "catches": [{ "session_id": "uuid", "species": "Bass", "length": 24.5 }],
+  "photos_meta": [{ "id": "uuid", "session_id": "uuid", "ts": 1736123456789, "s3_key": "photos/uuid.jpg" }]
+}
+```
+
+**/sync/up Response**
+
+``` json
+{
+  "status": "success",
+  "synced_count": 42,
+  "conflicts": [],
+  "server_timestamp": "2025-09-05T10:00:00Z"
+}
+```
+
+### 5.3 Database Schema (Postgres)
+
+**users**(id, email, password_hash, created_at)\
+**sessions**(id, user_id, started_at, ended_at, title, notes)\
+**track_points**(id, session_id, ts, lat, lon, acc, speed, heading)\
+**photos**(id, session_id, ts, lat, lon, uri, s3_key, size)\
+**catches**(id, session_id, ts, species, length, weight, notes, lat,
+lon)
+
+### 5.4 Infrastructure
+
+-   **API Layer**: FastAPI (Python) - stateless, containerized\
+-   **DB Layer**: Postgres with PITR backups\
+-   **Storage**: S3 for photos, encrypted at rest\
+-   **CDN**: CloudFront\
+-   **Auth**: JWT + refresh tokens
+
+### 5.5 Rate Limiting
+
+-   API requests: 100/min per user\
+-   Sync batch: max 500 items or 10MB payload\
+-   Photo upload: max 5MB per photo after compression\
+-   Retries: exponential backoff, max 5 retries
+
+### 5.6 Backup & Recovery
+
+-   Daily DB snapshots (30-day retention)\
+-   S3 versioning enabled\
+-   Cold standby region
+
+------------------------------------------------------------------------
+
+## 6) Technical Implementation
+
+### 6.1 Mobile Framework
+
+Decision: **React Native bare** (background services, ecosystem support)
+
+### 6.2 Architecture Diagram (Mermaid)
+
+``` mermaid
+flowchart LR
+  A[Mobile App] <--> B[API Gateway]
+  B <--> C[App Server]
+  C <--> D[(Postgres DB)]
+  C --> E[(S3 Storage)]
+  E --> F[CDN]
+```
+
+### 6.3 Data Flow (Sync)
+
+1.  Offline data stored in SQLite\
+2.  On connectivity, batch queued to `/sync/up`\
+3.  Server applies deltas, responds with conflicts + server timestamp\
+4.  Client merges and applies `/sync/down` updates
+
+### 6.4 Security Model
+
+-   TLS 1.2+\
+-   JWT (1h expiry) + refresh tokens\
+-   AES-256 at rest (DB, S3)\
+-   Row-level ownership enforced by `user_id`\
+-   Secure device storage for tokens
+
+### 6.5 Performance Targets
+
+-   Sync \<2s for 100 track points\
+-   API p95 \<500ms\
+-   Battery \<5% per 8h\
+-   App size \<50MB
+
+------------------------------------------------------------------------
+
+## 7) Data Management
+
+### 7.1 Local DB Schema (SQLite)
+
+``` sql
+CREATE TABLE sync_queue (
+  id INTEGER PRIMARY KEY,
+  entity_type TEXT,
+  entity_id TEXT,
+  operation TEXT,
+  retry_count INTEGER,
+  created_at TIMESTAMP
+);
+```
+
+Other tables mirror server schema: `sessions`, `track_points`, `photos`,
+`catches`
+
+### 7.2 Sync State Machine
+
+Idle → Queueing → Uploading → Conflict → Resolved → Synced
+
+### 7.3 Conflict Resolution
+
+-   Last Write Wins by `last_modified_at`\
+-   Tombstones beat updates\
+-   Photos unique by ID
+
+### 7.4 Data Retention
+
+-   Local DB cap 200MB\
+-   Photo cache 1GB\
+-   Server retains until user deletes
+
+### 7.5 Migration
+
+-   Server: Flyway/Prisma\
+-   Mobile: SQLite migrations per version
+
+------------------------------------------------------------------------
+
+## 8) Non-Functional Requirements
+
+### 8.1 Error Handling Codes
+
+-   4001: Invalid sync token\
+-   4002: Conflict requires resolution\
+-   4003: Photo too large\
+-   5001: Database unavailable
+
+### 8.2 Storage & Bandwidth
+
+-   Photos compressed to \<5MB\
+-   Gzip JSON sync\
+-   WAL journaling enabled
+
+### 8.3 GPS Permission Fallbacks
+
+-   If denied mid-session → stop tracking gracefully\
+-   Manual session entry allowed (no GPS)
+
+### 8.4 Offline Map Strategy
+
+-   Breadcrumbs shown on basic offline tiles (MapBox offline)\
+-   Map optional in MVP
+
+### 8.5 Monitoring
+
+-   Client: Crashlytics/Sentry\
+-   Server: Prometheus, Grafana
+
+------------------------------------------------------------------------
+
+## 9) Testing Strategy
+
+-   Offline trip simulation → sync later\
+-   Background GPS test (8h screen off)\
+-   Sync failure recovery tests\
+-   Multi-device conflict resolution\
+-   Platform-specific edge cases (iOS background kill, Android Doze)
+
+------------------------------------------------------------------------
+
+## 10) Privacy & Compliance
+
+-   Opt-in location permissions\
+-   Export + delete account options\
+-   GDPR/CCPA compliant\
+-   No third-party data sale
+
+------------------------------------------------------------------------
+
+## 11) Acceptance Criteria
+
+-   GPS points every 5 min during active session\
+-   Photos + catches linked correctly\
+-   Sync works offline-first, conflict-free\
+-   Auth flows secure (register, login, refresh, reset)\
+-   Background tracking stable
+
+------------------------------------------------------------------------
+
+**End of Spec v0.3**

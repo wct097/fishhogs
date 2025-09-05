@@ -13,7 +13,7 @@
 - Start/stop fishing sessions with automatic timestamping
 - Background-safe GPS sampling every 5 minutes during active sessions
 - Offline-first local storage with opportunistic sync
-- Session pause/resume capabilities
+- Session pause/resume (post-MVP, new session for now)
 
 ### Data Capture
 - **GPS Tracking**: Record location points every 5 minutes (lat/lon/timestamp/accuracy)
@@ -30,12 +30,13 @@
 ## Technical Architecture
 
 ### Technology Stack
-- **Framework**: [To be determined - React Native / Flutter / Expo]
-- **Local Database**: SQLite or Realm
-- **State Management**: [To be determined based on framework]
-- **Backend**: REST API with JWT authentication
-- **Cloud Storage**: For photo uploads
-- **Maps**: Offline-capable mapping solution
+- **Framework**: React Native (bare) - Chosen for background location support
+- **Local Database**: SQLite with sync_queue table
+- **State Management**: React Context/Redux (TBD)
+- **Backend**: FastAPI (Python) with JWT authentication
+- **Database**: PostgreSQL with PITR backups
+- **Cloud Storage**: S3 for photos with CloudFront CDN
+- **Maps**: MapBox with offline tiles (optional in MVP)
 
 ### Key Components
 1. **Session Service**: Manages active session lifecycle
@@ -160,7 +161,7 @@
 
 ## External Dependencies
 
-### Key Libraries (Tentative)
+### Key Libraries (React Native)
 - Location: react-native-geolocation-service or expo-location
 - Camera: react-native-camera or expo-camera
 - Maps: react-native-maps or mapbox
@@ -190,13 +191,25 @@
 
 ## Project Status
 
-**Current Phase**: Initial Development Planning
-**Next Milestone**: Technology stack selection and project setup
+**Current Phase**: Ready for Implementation (Spec v0.3 Complete)
+**Next Milestone**: React Native project initialization and backend setup
+**Framework Decision**: React Native (bare) chosen
+**Backend Decision**: FastAPI (Python) with PostgreSQL
 **Timeline**: MVP in 3 months, full release in 6 months
+
+### Immediate Next Steps
+1. Initialize React Native bare project
+2. Set up iOS/Android development environments
+3. Create SQLite schema with sync_queue
+4. Implement session management
+5. Build GPS background service
+6. Set up backend API structure
+7. Implement authentication (JWT)
+8. Create sync engine
 
 ## Resources
 
-- [Product Spec](../specs/fishing_tracker_spec.md)
+- [Product Spec](../specs/fishing_tracker_spec.md) - v0.3 Production Ready
 - [API Documentation](../docs/api/README.md) (when available)
 - [Design System](../docs/design/README.md) (when available)
 - [Testing Guide](../docs/testing/README.md) (when available)

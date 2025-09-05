@@ -48,18 +48,28 @@ A mobile app for anglers to **record fishing sessions offline** and **sync when 
 
 ## Project Status
 
-**Current Phase**: Initial Development Planning  
-**Version**: v0.1 (Specification)
+**Current Phase**: Ready for Implementation  
+**Version**: v0.3 (Production-Ready Specification)
+**Framework**: React Native (bare) - Decided
+**Backend**: FastAPI (Python) with PostgreSQL
 
 ## Documentation
 
-- [Product Specification](specs/fishing_tracker_spec.md) - Full product and technical requirements
-- [Project Context](ai_docs/project_context.md) - Detailed project context for AI assistants
-- [CLAUDE.md](CLAUDE.md) - AI assistant guidelines
+- [Product Specification](specs/fishing_tracker_spec.md) - v0.3 Production-ready spec with full API/backend definition
+- [Project Context](ai_docs/project_context.md) - Detailed project context for AI assistants (updated)
+- [CLAUDE.md](CLAUDE.md) - AI assistant guidelines (updated with framework decision)
 
 ## Development Setup
 
-*Coming soon - setup instructions will be added once technology stack is chosen*
+### Technology Stack (Decided)
+- **Mobile**: React Native (bare) with TypeScript
+- **Local DB**: SQLite with sync_queue
+- **Backend**: FastAPI (Python)
+- **Database**: PostgreSQL with PITR
+- **Storage**: S3 + CloudFront CDN
+- **Auth**: JWT with refresh tokens
+
+*Detailed setup instructions coming next - project initialization imminent*
 
 ## AI-Assisted Development
 

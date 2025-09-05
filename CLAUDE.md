@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Project Name**: Fishing Tracker (fishhogs)
 **Purpose**: Offline-first mobile app for anglers to record fishing sessions with GPS tracking, photo capture, and catch logging
-**Tech Stack**: Mobile cross-platform framework (TBD: React Native/Flutter/Expo), SQLite, REST API
+**Tech Stack**: React Native (bare), SQLite, FastAPI (Python), PostgreSQL, S3/CloudFront
 
 ## Key Architecture
 
@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Guidelines
 
 ### Code Style
-- Use TypeScript/Dart (depending on framework choice)
+- Use TypeScript (React Native chosen)
 - Follow platform-specific conventions (iOS/Android)
 - Implement proper error boundaries and fallbacks
 - Use async/await for all asynchronous operations
@@ -100,13 +100,19 @@ When assisting with this project:
 
 ## Current Development Status
 
-**Phase**: Initial Development Planning
+**Phase**: Ready for Implementation (Spec v0.3 Complete)
+**Framework**: React Native (bare) - Decided
+**Spec Status**: Production-ready with full backend/frontend definition
+
 **Next Steps**: 
-1. Choose mobile framework (React Native vs Flutter vs Expo)
-2. Set up project structure
-3. Implement basic session management
-4. Add GPS tracking service
-5. Create local database schema
+1. Initialize React Native project structure
+2. Set up development environment (iOS/Android)
+3. Implement SQLite local database schema
+4. Create session management module
+5. Build GPS tracking service with background support
+6. Set up backend API with FastAPI (Python)
+7. Implement JWT authentication flow
+8. Create sync engine for offline/online data
 
 ## Testing Checklist
 
@@ -121,6 +127,6 @@ Before any PR:
 
 ## Resources
 
-- [Product Specification](specs/fishing_tracker_spec.md)
+- [Product Specification](specs/fishing_tracker_spec.md) - v0.3 Production Ready
 - [Project Context](ai_docs/project_context.md)
 - [AI Development Guide](ai_docs/README.md)
