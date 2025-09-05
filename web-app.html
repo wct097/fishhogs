@@ -370,8 +370,10 @@
                     <span>📍 Map View (GPS Tracking)</span>
                 </div>
                 
-                <button onclick="app.showAddCatch()">🐟 Log Catch</button>
-                <button class="btn-secondary" onclick="app.capturePhoto()">📸 Take Photo</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <button style="background: #9C27B0; font-size: 18px;" onclick="app.capturePhoto()">📸 Take Photo</button>
+                    <button style="background: #4CAF50; font-size: 18px;" onclick="app.showAddCatch()">🐟 Log Catch</button>
+                </div>
                 <button class="btn-danger" onclick="app.endSession()">End Session</button>
                 
                 <div id="catchList"></div>
@@ -408,8 +410,8 @@
                     <div class="species-btn" onclick="app.selectSpecies(this, 'Other')">Other</div>
                 </div>
                 
-                <input type="number" id="catchLength" placeholder="Length (cm)">
-                <input type="number" id="catchWeight" placeholder="Weight (kg) - Optional">
+                <input type="number" id="catchLength" placeholder="Length (inches)">
+                <input type="number" id="catchWeight" placeholder="Weight (lbs) - Optional">
                 <input type="text" id="catchNotes" placeholder="Notes - Optional">
                 
                 <button onclick="app.saveCatch()">Save Catch</button>
@@ -457,8 +459,8 @@
                 <div style="margin-bottom: 20px;">
                     <h3>Units</h3>
                     <select id="unitsSelect" onchange="app.updateUnits()">
-                        <option value="metric">Metric (cm/kg)</option>
                         <option value="imperial">Imperial (in/lb)</option>
+                        <option value="metric">Metric (cm/kg)</option>
                     </select>
                 </div>
                 
@@ -513,6 +515,12 @@
                 this.checkBackendStatus();
                 setInterval(() => this.checkBackendStatus(), 30000);
                 this.loadFromLocalStorage();
+                
+                // Set imperial units as default
+                const unitsSelect = document.getElementById('unitsSelect');
+                if (unitsSelect && !localStorage.getItem('units')) {
+                    localStorage.setItem('units', 'imperial');
+                }
                 
                 if (this.authToken) {
                     this.showScreen('homeScreen');
@@ -810,12 +818,16 @@
                 if (this.activeSession.catches.length === 0) {
                     listEl.innerHTML = '<p style="text-align: center; color: #666;">No catches yet</p>';
                 } else {
+                    const units = localStorage.getItem('units') || 'imperial';
+                    const lengthUnit = units === 'imperial' ? 'in' : 'cm';
+                    const weightUnit = units === 'imperial' ? 'lbs' : 'kg';
+                    
                     listEl.innerHTML = '<h3>Catches</h3>' + 
                         this.activeSession.catches.map(c => `
                             <div class="catch-entry">
                                 <strong>${c.species}</strong>
-                                ${c.length ? ` - ${c.length}cm` : ''}
-                                ${c.weight ? ` - ${c.weight}kg` : ''}
+                                ${c.length ? ` - ${c.length}${lengthUnit}` : ''}
+                                ${c.weight ? ` - ${c.weight}${weightUnit}` : ''}
                                 ${c.notes ? `<br><small>${c.notes}</small>` : ''}
                             </div>
                         `).join('');
@@ -823,7 +835,33 @@
             },
             
             capturePhoto() {
-                alert('Photo capture would open camera here\nPhoto would be geotagged and saved');
+                // Simulate photo capture
+                const photoCount = (this.activeSession?.photos || []).length + 1;
+                const photo = {
+                    id: this.generateId(),
+                    timestamp: new Date().toISOString(),
+                    lat: 37.7749 + (Math.random() - 0.5) * 0.01,
+                    lon: -122.4194 + (Math.random() - 0.5) * 0.01,
+                    filename: `catch_photo_${photoCount}.jpg`
+                };
+                
+                if (this.activeSession) {
+                    if (!this.activeSession.photos) this.activeSession.photos = [];
+                    this.activeSession.photos.push(photo);
+                }
+                
+                // Show feedback
+                const catchListEl = document.getElementById('catchList');
+                if (catchListEl) {
+                    const photoMsg = document.createElement('div');
+                    photoMsg.className = 'message success';
+                    photoMsg.textContent = `📸 Photo captured! (${photo.filename})`;
+                    photoMsg.style.marginTop = '10px';
+                    catchListEl.insertBefore(photoMsg, catchListEl.firstChild);
+                    setTimeout(() => photoMsg.remove(), 3000);
+                }
+                
+                this.saveToLocalStorage();
             },
             
             loadHistory() {
