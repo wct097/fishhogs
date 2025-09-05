@@ -412,8 +412,11 @@
                     <div class="species-btn" onclick="app.selectSpecies(this, 'Other')">Other</div>
                 </div>
                 
-                <input type="number" id="catchLength" placeholder="Length (inches)">
+                <input type="number" id="catchLength" placeholder="Length (inches)" oninput="app.calculateHalibutWeight()">
                 <input type="number" id="catchWeight" placeholder="Weight (lbs) - Optional">
+                <div id="weightNote" style="color: #666; font-size: 12px; margin-top: -10px; margin-bottom: 10px; display: none;">
+                    Auto-calculated for halibut based on length
+                </div>
                 <input type="text" id="catchNotes" placeholder="Notes - Optional">
                 
                 <button onclick="app.saveCatch()">Save Catch</button>
@@ -806,6 +809,15 @@
                     alert('Please start a session first');
                     return;
                 }
+                // Clear form when showing
+                document.getElementById('catchLength').value = '';
+                document.getElementById('catchWeight').value = '';
+                document.getElementById('catchNotes').value = '';
+                document.getElementById('weightNote').style.display = 'none';
+                document.getElementById('catchWeight').placeholder = 'Weight (lbs) - Optional';
+                this.selectedSpecies = null;
+                document.querySelectorAll('.species-btn').forEach(b => b.classList.remove('selected'));
+                
                 this.showScreen('addCatchScreen');
             },
             
@@ -813,6 +825,54 @@
                 document.querySelectorAll('.species-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.selectedSpecies = species;
+                
+                // Show/hide weight note and trigger calculation for halibut
+                const weightNote = document.getElementById('weightNote');
+                const weightInput = document.getElementById('catchWeight');
+                
+                if (species === 'Halibut') {
+                    this.calculateHalibutWeight();
+                    if (weightNote) weightNote.style.display = 'block';
+                } else {
+                    if (weightNote) weightNote.style.display = 'none';
+                    if (weightInput) weightInput.placeholder = 'Weight (lbs) - Optional';
+                }
+            },
+            
+            calculateHalibutWeight() {
+                if (this.selectedSpecies !== 'Halibut') return;
+                
+                const lengthInput = document.getElementById('catchLength');
+                const weightInput = document.getElementById('catchWeight');
+                
+                if (!lengthInput || !weightInput) return;
+                
+                const length = parseFloat(lengthInput.value);
+                if (!length || length <= 0) {
+                    weightInput.value = '';
+                    return;
+                }
+                
+                // Use adjusted divisor based on length
+                // Formula: Weight = (Length^3) / divisor
+                // Divisor adjusts based on fish size for more accuracy
+                let divisor;
+                if (length <= 30) {
+                    divisor = 2400;  // Smaller halibut (18-30 inches)
+                } else if (length <= 50) {
+                    divisor = 2200;  // Medium halibut (30-50 inches)
+                } else if (length <= 70) {
+                    divisor = 2000;  // Large halibut (50-70 inches)
+                } else {
+                    divisor = 1800;  // Very large halibut (70+ inches)
+                }
+                
+                // Calculate weight using cubic formula
+                const weight = Math.pow(length, 3) / divisor;
+                
+                // Round to 1 decimal place
+                weightInput.value = Math.round(weight * 10) / 10;
+                weightInput.placeholder = 'Auto-calculated from length';
             },
             
             saveCatch() {
